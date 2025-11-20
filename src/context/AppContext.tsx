@@ -1,5 +1,5 @@
 import React, { createContext, useState, useCallback, useEffect } from 'react';
-import { EvaluationField, FileData, ProcessingProgress } from '../types';
+import { EvaluationField, FileData, ProcessingProgress, ApiKeys, ModelProvider } from '../types';
 import { storage, sessionData } from '../utils/storage';
 
 interface AppContextType {
@@ -15,8 +15,8 @@ interface AppContextType {
   clearFields: () => void;
 
   // API and model state
-  apiKey: string;
-  setApiKey: (key: string) => void;
+  apiKeys: ApiKeys;
+  setApiKey: (provider: ModelProvider, key: string) => void;
   selectedModel: string;
   setSelectedModel: (model: string) => void;
   selectedTier: string;
@@ -52,7 +52,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   // API and model state
-  const [apiKey, setApiKeyState] = useState<string>(storage.getApiKey());
+  const [apiKeys, setApiKeysState] = useState<ApiKeys>(storage.getApiKeys());
   const [selectedModel, setSelectedModelState] = useState<string>(
     storage.getSelectedModel()
   );
@@ -74,10 +74,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     storage.setFieldConfigs(fields);
   }, [fields]);
 
-  // Sync API key to localStorage
-  const setApiKey = useCallback((key: string) => {
-    setApiKeyState(key);
-    storage.setApiKey(key);
+  // Sync API keys to localStorage
+  const setApiKey = useCallback((provider: ModelProvider, key: string) => {
+    setApiKeysState(prev => ({ ...prev, [provider]: key }));
+    storage.setApiKey(provider, key);
   }, []);
 
   // Sync selected model to localStorage
@@ -113,7 +113,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const clearAllData = useCallback(() => {
     setFileData(null);
     setFields([]);
-    setApiKeyState('');
+    setApiKeysState({});
     setSelectedModelState('gemini-2-5-flash');
     setSelectedTierState('free');
     setIsProcessing(false);
@@ -133,7 +133,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updateField,
     removeField,
     clearFields,
-    apiKey,
+    apiKeys,
     setApiKey,
     selectedModel,
     setSelectedModel,

@@ -8,7 +8,8 @@ import { ProgressBar } from './components/ProgressBar';
 import { ResultsDownload } from './components/ResultsDownload';
 import { useApp } from './context/AppContext';
 import { excelHandler } from './utils/excelHandler';
-import { GeminiEvaluator } from './utils/geminiEvaluator';
+import { createEvaluator } from './utils/evaluatorFactory';
+import { BaseEvaluator } from './utils/baseEvaluator';
 import { MODELS } from './constants/models';
 import { ProcessingProgress } from './types';
 
@@ -16,7 +17,7 @@ export const App: React.FC = () => {
   const {
     fileData,
     fields,
-    apiKey,
+    apiKeys,
     selectedModel,
     selectedTier,
     isProcessing,
@@ -32,11 +33,20 @@ export const App: React.FC = () => {
   } = useApp();
 
   const [error, setError] = useState<string>('');
-  const [evaluator, setEvaluator] = useState<GeminiEvaluator | null>(null);
+  const [evaluator, setEvaluator] = useState<BaseEvaluator | null>(null);
 
   const handleStartEvaluation = useCallback(async () => {
-    if (!fileData || !apiKey || fields.length === 0) {
+    if (!fileData || fields.length === 0) {
       setError('Please configure all required fields');
+      return;
+    }
+
+    const modelConfig = MODELS[selectedModel];
+    const provider = modelConfig.provider;
+    const apiKey = apiKeys[provider];
+
+    if (!apiKey) {
+      setError(`Please configure API key for ${modelConfig.name}`);
       return;
     }
 
@@ -54,10 +64,9 @@ export const App: React.FC = () => {
     });
 
     try {
-      const modelConfig = MODELS[selectedModel];
       const rateLimits = modelConfig.tiers[selectedTier as keyof typeof modelConfig.tiers];
 
-      const newEvaluator = new GeminiEvaluator(apiKey, modelConfig.modelId, rateLimits);
+      const newEvaluator = createEvaluator(provider, apiKey, modelConfig.modelId, rateLimits);
       setEvaluator(newEvaluator);
 
       const allResults: Record<string, any>[] = new Array(fileData.rows.length)
@@ -66,8 +75,6 @@ export const App: React.FC = () => {
       const allErrors = new Map<number, string>();
 
       for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
-        if (!isProcessing) break;
-
         const field = fields[fieldIndex];
 
         try {
@@ -119,7 +126,7 @@ export const App: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [fileData, fields, apiKey, selectedModel, selectedTier, setIsProcessing, setProgress, setResults, setErrors, isProcessing]);
+  }, [fileData, fields, apiKeys, selectedModel, selectedTier, setIsProcessing, setProgress, setResults, setErrors]);
 
   const handlePause = useCallback(() => {
     setIsPaused(true);

@@ -35,16 +35,20 @@ export interface ProcessingProgress {
   errors: Map<number, string>;
 }
 
+export type ModelProvider = 'google' | 'anthropic' | 'openai';
+
+export interface ApiKeys {
+  google?: string;
+  anthropic?: string;
+  openai?: string;
+}
+
 export interface ModelConfig {
   name: string;
   description: string;
   modelId: string;
-  tiers: {
-    free: RateLimits;
-    tier1: RateLimits;
-    tier2: RateLimits;
-    tier3: RateLimits;
-  };
+  provider: ModelProvider;
+  tiers: Record<string, RateLimits>;
 }
 
 export interface RateLimits {

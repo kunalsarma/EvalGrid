@@ -1,7 +1,7 @@
-import { EvaluationField, FileData, ProcessingProgress } from '../types';
+import { EvaluationField, FileData, ProcessingProgress, ApiKeys, ModelProvider } from '../types';
 
 const STORAGE_KEYS = {
-  API_KEY: 'evalgrid_api_key',
+  API_KEYS: 'evalgrid_api_keys',
   SELECTED_MODEL: 'evalgrid_selected_model',
   SELECTED_TIER: 'evalgrid_selected_tier',
   FIELD_CONFIGS: 'evalgrid_field_configs',
@@ -11,16 +11,19 @@ const STORAGE_KEYS = {
 
 // localStorage utilities
 export const storage = {
-  getApiKey: (): string => {
-    return localStorage.getItem(STORAGE_KEYS.API_KEY) || '';
+  getApiKeys: (): ApiKeys => {
+    const data = localStorage.getItem(STORAGE_KEYS.API_KEYS);
+    return data ? JSON.parse(data) : {};
   },
 
-  setApiKey: (key: string): void => {
-    localStorage.setItem(STORAGE_KEYS.API_KEY, key);
+  setApiKey: (provider: ModelProvider, key: string): void => {
+    const apiKeys = storage.getApiKeys();
+    apiKeys[provider] = key;
+    localStorage.setItem(STORAGE_KEYS.API_KEYS, JSON.stringify(apiKeys));
   },
 
-  clearApiKey: (): void => {
-    localStorage.removeItem(STORAGE_KEYS.API_KEY);
+  clearApiKeys: (): void => {
+    localStorage.removeItem(STORAGE_KEYS.API_KEYS);
   },
 
   getSelectedModel: (): string => {

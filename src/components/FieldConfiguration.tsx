@@ -71,6 +71,7 @@ export const FieldConfiguration: React.FC = () => {
               field={field}
               columns={fileData.headers}
               fieldIndex={index}
+              allFields={fields}
               onRemove={() => removeField(field.id)}
             />
           ))}

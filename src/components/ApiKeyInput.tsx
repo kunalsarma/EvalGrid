@@ -1,17 +1,45 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { MODELS } from '../constants/models';
 import { WARNING_MESSAGES } from '../constants/errors';
+import { ModelProvider } from '../types';
+
+const PROVIDER_INFO: Record<ModelProvider, { name: string; url: string }> = {
+  google: {
+    name: 'Google AI Studio',
+    url: 'https://aistudio.google.com/apikey'
+  },
+  anthropic: {
+    name: 'Anthropic Console',
+    url: 'https://console.anthropic.com/settings/keys'
+  },
+  openai: {
+    name: 'OpenAI Platform',
+    url: 'https://platform.openai.com/api-keys'
+  }
+};
 
 export const ApiKeyInput: React.FC = () => {
-  const { apiKey, setApiKey } = useApp();
+  const { apiKeys, setApiKey, selectedModel } = useApp();
   const [isVisible, setIsVisible] = useState(false);
-  const [tempKey, setTempKey] = useState(apiKey);
+
+  const modelConfig = MODELS[selectedModel];
+  const provider = modelConfig.provider;
+  const providerInfo = PROVIDER_INFO[provider];
+  const currentKey = apiKeys[provider] || '';
+
+  const [tempKey, setTempKey] = useState(currentKey);
 
   const handleSave = () => {
     if (tempKey.trim()) {
-      setApiKey(tempKey.trim());
+      setApiKey(provider, tempKey.trim());
     }
   };
+
+  // Update tempKey when provider changes
+  React.useEffect(() => {
+    setTempKey(apiKeys[provider] || '');
+  }, [provider, apiKeys]);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6">
@@ -26,14 +54,17 @@ export const ApiKeyInput: React.FC = () => {
 
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Google AI Studio API Key
+          {providerInfo.name} API Key
+          <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+            (for {modelConfig.name})
+          </span>
         </label>
         <div className="flex gap-2">
           <input
             type={isVisible ? 'text' : 'password'}
             value={tempKey}
             onChange={(e) => setTempKey(e.target.value)}
-            placeholder="Enter your Google AI Studio API key"
+            placeholder={`Enter your ${providerInfo.name} API key`}
             className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500"
           />
           <button
@@ -46,12 +77,12 @@ export const ApiKeyInput: React.FC = () => {
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
           Get your API key at{' '}
           <a
-            href="https://aistudio.google.com/apikey"
+            href={providerInfo.url}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
-            Google AI Studio
+            {providerInfo.name}
           </a>
         </p>
       </div>
@@ -64,7 +95,7 @@ export const ApiKeyInput: React.FC = () => {
         >
           Save API Key
         </button>
-        {apiKey && (
+        {currentKey && (
           <span className="flex items-center text-sm text-green-600 dark:text-green-400">
             ✓ API Key configured
           </span>

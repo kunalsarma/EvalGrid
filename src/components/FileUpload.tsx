@@ -8,7 +8,7 @@ interface FileUploadProps {
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onTemplateDownload }) => {
-  const { fileData, setFileData } = useApp();
+  const { fileData, setFileData, setResults, setProgress, setErrors } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(false);
@@ -24,6 +24,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onTemplateDownload }) =>
 
       const data = await excelHandler.parseFile(file);
       setFileData(data);
+
+      // Clear previous evaluation results when a new file is loaded
+      setResults(null);
+      setProgress(null);
+      setErrors(new Map());
     } catch (err) {
       const message = err instanceof Error ? err.message : ERROR_MESSAGES.INVALID_FILE;
       setError(message);

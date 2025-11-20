@@ -8,6 +8,7 @@ interface FieldConfigCardProps {
   field: EvaluationField;
   columns: string[];
   fieldIndex: number;
+  allFields: EvaluationField[];
   onRemove: () => void;
 }
 
@@ -17,6 +18,7 @@ export const FieldConfigCard: React.FC<FieldConfigCardProps> = ({
   field,
   columns,
   fieldIndex,
+  allFields,
   onRemove,
 }) => {
   const { updateField } = useApp();
@@ -72,6 +74,16 @@ export const FieldConfigCard: React.FC<FieldConfigCardProps> = ({
         i === index ? { ...c, ...updates } : c
       ),
     });
+  };
+
+  const handleCopyContextColumns = (sourceFieldId: string) => {
+    const sourceField = allFields.find(f => f.id === sourceFieldId);
+    if (sourceField && sourceField.contextColumns.length > 0) {
+      // Copy all context columns from the source field
+      handleUpdate({
+        contextColumns: [...sourceField.contextColumns]
+      });
+    }
   };
 
   const isValid =
@@ -173,12 +185,37 @@ export const FieldConfigCard: React.FC<FieldConfigCardProps> = ({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Context Columns (with descriptions)
               </label>
-              <button
-                onClick={handleAddContextColumn}
-                className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
-              >
-                + Add
-              </button>
+              <div className="flex gap-2">
+                {/* Copy from dropdown */}
+                {allFields.filter(f => f.id !== field.id && f.contextColumns.length > 0).length > 0 && (
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleCopyContextColumns(e.target.value);
+                        e.target.value = ''; // Reset dropdown
+                      }
+                    }}
+                    className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50 border-0 cursor-pointer"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Copy from...</option>
+                    {allFields
+                      .filter(f => f.id !== field.id && f.contextColumns.length > 0)
+                      .map(f => (
+                        <option key={f.id} value={f.id}>
+                          {f.name || 'Unnamed Field'} ({f.contextColumns.length})
+                        </option>
+                      ))
+                    }
+                  </select>
+                )}
+                <button
+                  onClick={handleAddContextColumn}
+                  className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                >
+                  + Add
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">
